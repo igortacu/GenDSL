@@ -1,0 +1,20 @@
+# ANTLR generated sources
+src/main/java/elsd/generated/
+
+# Compiled output
+build/
+
+# ANTLR jar
+antlr-4.13.2-complete.jar
+*.jar
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+
+# OS files
+.DS_Store
