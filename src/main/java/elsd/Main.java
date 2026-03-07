@@ -1,6 +1,7 @@
 package elsd;
 
 import elsd.ast.ASTBuilder;
+import elsd.ast.ASTDotExporter;
 import elsd.ast.ASTNode;
 import elsd.ast.ASTPrinter;
 import elsd.ast.ASTTreeViewer;
@@ -10,6 +11,7 @@ import org.antlr.v4.gui.TreeViewer;
 
 import javax.swing.*;
 import java.io.IOException;
+import java.io.FileWriter;
 import java.util.Arrays;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -34,18 +36,20 @@ public class Main {
 
     public static void main(String[] args) {
         if (args.length < 1) {
-            System.err.println("Usage: java elsd.Main [--tokens] [--ast] [--ast-gui] [--gui] <file.elsd>");
+            System.err.println("Usage: java elsd.Main [--tokens] [--ast] [--graph] [--ast-gui] [--gui] <file.elsd>");
             System.err.println();
             System.err.println("Options:");
             System.err.println("  --tokens   Print the token stream");
             System.err.println("  --ast      Build and print the Abstract Syntax Tree");
-            System.err.println("  --ast-gui  Open the AST graphical viewer");
+            System.err.println("  --graph    Export AST as graph image (via graphviz)");
+            System.err.println("  --ast-gui  Open the AST graphical viewer (Swing)");
             System.err.println("  --gui      Open the ANTLR parse-tree GUI (requires display)");
             System.exit(1);
         }
 
         boolean showTokens = false;
         boolean showAst = false;
+        boolean showGraph = false;
         boolean showAstGui = false;
         boolean showGui = false;
         String filePath = null;
@@ -54,6 +58,7 @@ public class Main {
             switch (arg) {
                 case "--tokens":  showTokens = true;  break;
                 case "--ast":     showAst = true;     break;
+                case "--graph":   showGraph = true;    break;
                 case "--ast-gui": showAstGui = true;  break;
                 case "--gui":     showGui = true;     break;
                 default:          filePath = arg;     break;
@@ -127,6 +132,24 @@ public class Main {
                 System.out.println(printer.print(ast));
             }
 
+            // Export AST as DOT graph and render with graphviz
+            if (showGraph) {
+                ASTBuilder builder = new ASTBuilder();
+                ASTNode.Program ast = (ASTNode.Program) builder.visit(tree);
+                ASTDotExporter exporter = new ASTDotExporter();
+                String dot = exporter.export(ast);
+                String dotFile = "ast.dot";
+                try (FileWriter fw = new FileWriter(dotFile)) {
+                    fw.write(dot);
+                }
+                System.out.println("DOT file saved to: " + dotFile);
+                System.out.println("Rendering graph...");
+                ProcessBuilder pb = new ProcessBuilder("python3", "render_ast.py", dotFile);
+                pb.inheritIO();
+                Process p = pb.start();
+                p.waitFor();
+            }
+
             // Open graphical AST viewer
             if (showAstGui) {
                 System.out.println("Opening AST graphical viewer...");
@@ -150,8 +173,8 @@ public class Main {
                 frame.setVisible(true);
             }
 
-        } catch (IOException e) {
-            System.err.println("Error reading file: " + e.getMessage());
+        } catch (IOException | InterruptedException e) {
+            System.err.println("Error: " + e.getMessage());
             System.exit(1);
         }
     }
