@@ -5,6 +5,7 @@
 # Usage:
 #   ./run.sh examples/sample.elsd            # parse a file
 #   ./run.sh --tokens examples/sample.elsd   # also show token stream
+#   ./run.sh --ast examples/sample.elsd      # build & print the AST
 #   ./run.sh --gui examples/sample.elsd      # open parse-tree GUI
 #   ./run.sh --generate                      # regenerate ANTLR sources
 # ──────────────────────────────────────────────────────────────────────

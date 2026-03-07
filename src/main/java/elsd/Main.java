@@ -1,5 +1,9 @@
 package elsd;
 
+import elsd.ast.ASTBuilder;
+import elsd.ast.ASTNode;
+import elsd.ast.ASTPrinter;
+import elsd.ast.ASTTreeViewer;
 import elsd.generated.*;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.gui.TreeViewer;
@@ -23,29 +27,36 @@ import java.nio.file.Paths;
  * Usage:
  *   java -cp ".:antlr-4.13.2-complete.jar" elsd.Main <file.elsd>
  *   java -cp ".:antlr-4.13.2-complete.jar" elsd.Main --tokens <file.elsd>
+ *   java -cp ".:antlr-4.13.2-complete.jar" elsd.Main --ast    <file.elsd>
  *   java -cp ".:antlr-4.13.2-complete.jar" elsd.Main --gui    <file.elsd>
  */
 public class Main {
 
     public static void main(String[] args) {
         if (args.length < 1) {
-            System.err.println("Usage: java elsd.Main [--tokens] [--gui] <file.elsd>");
+            System.err.println("Usage: java elsd.Main [--tokens] [--ast] [--ast-gui] [--gui] <file.elsd>");
             System.err.println();
             System.err.println("Options:");
             System.err.println("  --tokens   Print the token stream");
+            System.err.println("  --ast      Build and print the Abstract Syntax Tree");
+            System.err.println("  --ast-gui  Open the AST graphical viewer");
             System.err.println("  --gui      Open the ANTLR parse-tree GUI (requires display)");
             System.exit(1);
         }
 
         boolean showTokens = false;
+        boolean showAst = false;
+        boolean showAstGui = false;
         boolean showGui = false;
         String filePath = null;
 
         for (String arg : args) {
             switch (arg) {
-                case "--tokens": showTokens = true; break;
-                case "--gui":    showGui = true;    break;
-                default:         filePath = arg;    break;
+                case "--tokens":  showTokens = true;  break;
+                case "--ast":     showAst = true;     break;
+                case "--ast-gui": showAstGui = true;  break;
+                case "--gui":     showGui = true;     break;
+                default:          filePath = arg;     break;
             }
         }
 
@@ -105,6 +116,24 @@ public class Main {
             System.out.println("── Parse Tree (LISP) ──────────────────────");
             String lispTree = tree.toStringTree(parser);
             System.out.println(prettyPrintTree(lispTree));
+
+            // Build and print the AST
+            if (showAst) {
+                System.out.println();
+                System.out.println("── Abstract Syntax Tree ───────────────────");
+                ASTBuilder builder = new ASTBuilder();
+                ASTNode.Program ast = (ASTNode.Program) builder.visit(tree);
+                ASTPrinter printer = new ASTPrinter();
+                System.out.println(printer.print(ast));
+            }
+
+            // Open graphical AST viewer
+            if (showAstGui) {
+                System.out.println("Opening AST graphical viewer...");
+                ASTBuilder builder = new ASTBuilder();
+                ASTNode.Program ast = (ASTNode.Program) builder.visit(tree);
+                ASTTreeViewer.show(ast);
+            }
 
             // Optionally open the GUI inspector
             if (showGui) {
